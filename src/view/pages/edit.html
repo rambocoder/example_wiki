@@ -1,0 +1,27 @@
+{% extends "pages/index.html" %}
+
+{% block title %}Edit wiki page{% endblock %}</title>
+
+{% block body %}
+<h1>Edit your wiki page:</h1>
+<p>To link between pages, place the destination page numerical id inside of square brackets.</p>
+<p><i>Example:</i> <b>Please visit [page-number] to view more information.</b></p>
+<form method="post" action="{% url action="edit" %}">
+<input type="hidden" name="page_id" value="{% if page %}{{ page.id }}{% endif %}" />
+<p>Title:</p><input type="text" name="page_title" value="{% if page %}{{ page.page_title }}{% endif %}" />
+<p>Text:</p><textarea name="page_text">{% if page %}{{ page.page_text }}{% endif %}</textarea>
+<div>
+<input type="submit" value="Save"/>
+</div>
+</form>
+
+{% if errors %}
+<ul>
+  {% for error in errors %}
+  <li>{{ error }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}
+

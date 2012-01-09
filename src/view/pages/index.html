@@ -1,0 +1,28 @@
+<html>
+<head>
+<title>{% block title %}Wiki pages{% endblock %}</title>
+</head>
+<body>
+<ul>
+	<li><a href="{% url action="index" %}">Home Page</a></li>
+	<li><a href="{% url action="create" %}">New Wiki Page...</a></li>
+</ul>
+{% block body %}
+<h1>My Wiki Pages:</h1>
+<ul>
+{% if pages %}
+  {% for page in pages %}
+    <li><a href="{% url action="view" %}/{{ page.id }}">{{ page.page_title }}</a></li>
+  {% endfor %}
+{% else %}
+  <li>No Wiki Pages</li>
+{% endif %}
+</ul>
+
+
+{% endblock %}
+
+
+</form>
+</body>
+</html>

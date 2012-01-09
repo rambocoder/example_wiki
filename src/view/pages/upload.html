@@ -1,0 +1,24 @@
+{% extends "wiki/index.html" %}
+{% block title %}Upload an image{% endblock %}
+
+{% block body %}
+
+{% if errors %}
+<ul>
+  {% for error in errors %}
+  <li>{{ error }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+<h1>Upload an image</h1>
+<div>
+<p>
+Please specify a file, or a set of files:<br>
+<input type="file" name="datafile" size="40">
+</p>
+</div>
+<input type="submit"/>
+</form>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "pages/index.html" %}
+{% block title %}A new Wiki Page{% endblock %}
+
+{% block body %}
+
+{% if errors %}
+<ul>
+  {% for error in errors %}
+  <li>{{ error }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<form method="post">
+<h1>Create a new wiki page</h1>
+<div>
+<p>Title:</p><textarea name="page_title">{% if new_page %}{{ new_page.page_title | escape }}{% endif %}</textarea>
+</div>
+<div><p>Text:</p>
+<textarea name="page_text">{% if new_page %}{{ new_page.page_text | escape }}{% endif %}</textarea>
+</div>
+<input type="submit"/>
+</form>
+{% endblock %}

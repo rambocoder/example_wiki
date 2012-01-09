@@ -1,0 +1,13 @@
+{% if error %}
+<font color="red">{{ error }}</font>
+{% endif %}
+<form method="post">
+Name:<br />
+<input name="name" /><br /><br />
+
+Password:<br />
+<input name="password" type="password" /><br /><br />
+
+<input type="submit" value="Log in" />
+<input type="hidden" name="redirect" value="{{ redirect|default_if_none:"/wiki/index" }}" />
+</form>
