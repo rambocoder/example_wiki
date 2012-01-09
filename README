@@ -1,1 +1,5 @@
-Example wiki application for ChicagoBoss web framework
+Example wiki application for ChicagoBoss web framework.
+
+Uses MySQL.
+
+Walkthru is documented in my blog post: http://www.rambocoder.com/?p=17
