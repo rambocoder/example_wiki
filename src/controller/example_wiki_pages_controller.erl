@@ -1,5 +1,6 @@
 -module(example_wiki_pages_controller, [Req]).
 -compile(export_all).
+-default_action(index).
 
 %% @doc show a list of all wiki pages out there
 index('GET', []) ->

@@ -7,7 +7,7 @@
 <div>{{ cleaned }}</div>
 
 <ul>
-<li><a href="{% url action="edit" %}/{{ page.id }}">Edit</a></li>
+<li><a href="{% url action="edit" id=page.id %}">Edit</a></li>
 </ul>
 
 {% endblock %}
