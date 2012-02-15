@@ -2,6 +2,21 @@
 -compile(export_all).
 -default_action(index).
 
+service('WS', []) ->
+	%io:format("WAITING~n", []),
+	Ws = Req,
+	receive
+		{browser, Data} ->
+			io:format("RECEIVED ~p~n", [Data]),
+			Ws:send(["received '", Data, "'"]),
+			ok;
+		_Ignore ->
+			ok
+	after 10000 ->
+		Ws:send("pushing!"),
+		ok
+	end.
+
 %% @doc show a list of all wiki pages out there
 index('GET', []) ->
 	Pages = boss_db:find(page, []),

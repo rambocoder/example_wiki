@@ -1,0 +1,48 @@
+<html>
+		<head>
+			<script type="text/javascript">
+				var ws;
+				function addStatus(text){
+					var date = new Date();
+					document.getElementById('status').innerHTML = document.getElementById('status').innerHTML + date + ": " + text + "<br>";				
+				}
+				function ready(){
+					
+					if ("WebSocket" in window) {
+						ws = new WebSocket("ws://localhost:8001/pages/service");
+					} else if ("MozWebSocket" in window) {
+						ws = new MozWebSocket("ws://localhost:8001/pages/service");
+					}
+					if (ws) {
+						// browser supports websockets
+						ws.onopen = function() {
+							// websocket is connected
+							addStatus("websocket connected!");
+							// send hello data to server.
+							ws.send("hello server!");
+							addStatus("sent message to server: 'hello server'!");
+						};
+						ws.onmessage = function (evt) {
+							var receivedMsg = evt.data;
+							addStatus("server sent the following: '" + receivedMsg + "'");
+						};
+						ws.onclose = function() {
+							// websocket was closed
+							addStatus("websocket was closed");
+						};
+					} else {
+						// browser does not support websockets
+						addStatus("sorry, your browser does not support websockets.");
+					}
+				}
+				function sendData()
+				{
+					ws.send("from client!");
+				}
+			</script>
+		</head>
+		<body onload="ready();">
+			<h1 onclick="sendData();">Send data to misultin</h1>
+			<div id="status"></div>
+		</body>
+	</html>
