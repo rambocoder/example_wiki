@@ -42,8 +42,8 @@ create('GET', []) -> ok;
 
 %% @doc Handles form submission	for new wiki page
 create('POST', []) ->
-	Title = Req:post_param("page_title"),
-	Text = Req:post_param("page_text"),
+	Title = xmerl_lib:export_text(Req:post_param("page_title")),  % sanitizing input
+	Text = xmerl_lib:export_text(Req:post_param("page_text")),    %sanitizing input
 	NewWikiPage = page:new(id, Title, Text),
 	case NewWikiPage:save() of
 		{ok, SavedWikiPage} -> 	{redirect, [{action, "view"}, {id, SavedWikiPage:id()}]}; 
