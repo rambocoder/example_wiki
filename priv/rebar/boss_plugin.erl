@@ -10,7 +10,9 @@
 		 pre_compile/2,
 		 pre_eunit/2]).
 
--define(BOSS_CONFIG, "boss.config").
+-define(BOSS_PLUGIN_CLIENT_VERSION, 1).
+-define(BOSS_CONFIG_FILE, "boss.config").
+-define(BOSS_TEST_CONFIG_FILE, "boss.test.config").
 
 %% ====================================================================
 %% Public API
@@ -24,11 +26,11 @@
 %% @end
 %%--------------------------------------------------------------------
 boss(RebarConf, AppFile) ->
-	case is_base_dir() of
+	case is_base_dir(RebarConf) of
 		true -> 
-			{ok, BossConf} = init(RebarConf, AppFile),
-			Command = rebar_config:get_global(c, "help"),
-			case boss_rebar:run(Command, RebarConf, BossConf, AppFile) of
+            Command = rebar_config:get_global(RebarConf, c, "help"),
+			{ok, BossConf} = init(RebarConf, AppFile, Command),
+			case boss_rebar:run(?BOSS_PLUGIN_CLIENT_VERSION, Command, RebarConf, BossConf, AppFile) of
 				{error, command_not_found} ->
 					io:format("ERROR: boss command not found.~n"), 
 					boss_rebar:help(),
@@ -47,7 +49,7 @@ boss(RebarConf, AppFile) ->
 %%       Set's the ebin cb_apps and loads the connector 
 %% @end
 %%--------------------------------------------------------------------
-init(_RebarConf, AppFile) ->
+init(_RebarConf, AppFile, Command) ->
     %% Compile and load the boss_rebar code, this can't be compiled
 	%% as a normal boss lib without the rebar source dep
 	%% The load of ./rebar boss:
@@ -56,9 +58,10 @@ init(_RebarConf, AppFile) ->
 	%% - This plugin compiles and loads the boss_rebar code in ["cb/priv/rebar"],
 	%%   so we can extend/bugfix/tweak the framework without the need of manually
 	%%   recopy code to user apps
-	BossPath = case boss_config_value(boss, path) of
+    {BossConf, BossConfFile} = boss_config(Command),
+	BossPath = case boss_config_value(boss, path, BossConf) of
 				   {error, _} ->
-					   io:format("FATAL: Failed to read boss=>path config in boss.config.~n"),
+					   io:format("FATAL: Failed to read boss=>path config in ~p.~n", [BossConfFile]),
 					   halt(1);
 				   Val -> Val
 			   end,
@@ -77,11 +80,12 @@ init(_RebarConf, AppFile) ->
 					  end
 			  end, RebarErls),
 
-    BossConf = boss_config(),
-
-	%% add all cb_apps defined in boss.config to code path
+	%% add all cb_apps defined in config file to code path
 	%% including the deps ebin dirs
 	[code:add_path(CodePath) || CodePath <- boss_rebar:all_ebin_dirs(BossConf, AppFile)],
+    
+    %% Load the config in the environment
+    boss_rebar:init_conf(BossConf),
 	
 	{ok, BossConf}.
 	
@@ -95,10 +99,10 @@ init(_RebarConf, AppFile) ->
 %% @end
 %%--------------------------------------------------------------------
 pre_compile(RebarConf, AppFile) ->
-	case is_base_dir() of
+	case is_base_dir(RebarConf) of
 		true -> 
-			{ok, BossConf} = init(RebarConf, AppFile),
-			boss_rebar:run(compile, RebarConf, BossConf, AppFile),
+			{ok, BossConf} = init(RebarConf, AppFile, "compile"),
+			boss_rebar:run(?BOSS_PLUGIN_CLIENT_VERSION, compile, RebarConf, BossConf, AppFile),
 			halt(0);
 		false -> ok
 	end.
@@ -113,10 +117,10 @@ pre_compile(RebarConf, AppFile) ->
 %% @end
 %%--------------------------------------------------------------------
 pre_eunit(RebarConf, AppFile) ->
-	case is_base_dir() of
+	case is_base_dir(RebarConf) of
 		true -> 
-			{ok, BossConf} = init(RebarConf, AppFile),
-			boss_rebar:run(test_eunit, RebarConf, BossConf, AppFile),
+			{ok, BossConf} = init(RebarConf, AppFile, "test_eunit"),
+			boss_rebar:run(?BOSS_PLUGIN_CLIENT_VERSION, test_eunit, RebarConf, BossConf, AppFile),
 			halt(0);
 		false -> ok
 	end.
@@ -127,13 +131,27 @@ pre_eunit(RebarConf, AppFile) ->
 
 %% Checks if the current dir (rebar execution) is the base_dir
 %% Used to prevent run boss tasks in deps directory
-is_base_dir() ->
-    filename:absname(rebar_utils:get_cwd()) =:= rebar_config:get_global(base_dir, undefined).
+is_base_dir(RebarConf) ->
+    filename:absname(rebar_utils:get_cwd()) =:= rebar_config:get_xconf(RebarConf, base_dir, undefined).
 
 %% Gets the boss.config central configuration file
-boss_config() ->
-	{ok, BossConfig} = file:consult(?BOSS_CONFIG),
-	hd(BossConfig).
+boss_config(Command) ->
+    BossConfFile = case lists:prefix("test_", Command) of
+        false ->
+            ?BOSS_CONFIG_FILE;
+        true ->
+            case file:read_file_info(?BOSS_TEST_CONFIG_FILE) of
+                {ok, _} -> ?BOSS_TEST_CONFIG_FILE;
+                _ -> ?BOSS_CONFIG_FILE
+            end
+    end,
+    case file:consult(BossConfFile) of
+        {error,enoent} ->
+            io:format("FATAL: Config file ~p not found.~n", [BossConfFile]),
+            halt(1);
+        {ok, [BossConfig]} ->
+            {BossConfig, BossConfFile}
+    end.
 
 %%--------------------------------------------------------------------
 %% @doc Get Boss config value app, key
@@ -141,8 +159,8 @@ boss_config() ->
 %%       Searchs in boss config for a given App and Key
 %% @end
 %%--------------------------------------------------------------------
-boss_config_value(App, Key) ->
-	case lists:keyfind(App, 1, boss_config()) of
+boss_config_value(App, Key, BossConfig) ->
+	case lists:keyfind(App, 1, BossConfig) of
 		false -> 
 			{error, boss_config_app_not_found};
 		{App, AppConfig} -> 
